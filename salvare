@@ -1,0 +1,59 @@
+#!/bin/bash
+
+POSITIONAL=()
+TARGET=$1
+TYPE=""
+DESTINATION=""
+
+if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
+  echo "Required source"
+  exit 1
+fi
+
+if [ ! -e $TARGET ]; then
+  echo "Not found. [$TARGET]"
+  exit 1
+fi
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -t|--type)
+    TYPE="$2"
+    shift
+    shift
+    ;;
+    -d|--destination)
+    DESTINATION="$2"
+    shift
+    shift
+    ;;
+    *)
+    POSITIONAL+=("$1")
+    shift
+    ;;
+esac
+done
+
+if [[ "$DESTINATION" = "" ]]; then
+  echo "Required destination"
+  exit 1
+fi
+
+case $TYPE in
+    GCS)
+    echo GCS
+    ;;
+    S3)
+    echo S3
+    ;;
+    Dropbox)
+    echo Dropbox
+    ;;
+    *)
+    echo "Required destination is in [GCS, S3, Dropbox]"
+    exit 1
+    ;;
+esac
