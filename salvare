@@ -1,9 +1,20 @@
 #!/bin/bash
 
 POSITIONAL=()
-TARGET=$1
-TYPE=""
+TARGET=${1%/}
+UPLOAD_TYPE=""
 DESTINATION=""
+TMPDIR="/tmp"
+if [ "${TARGET##*/}" = "." ] || [ "${TARGET##*/}" = ".." ] ; then
+    NAME="salvare"
+else
+    NAME=${TARGET##*/}
+fi
+
+function archive () {
+    mkdir -p "$2/salvare"
+    tar -zcvf "$2/salvare/$3.tar.gz" $1 > /dev/null 2>&1
+}
 
 if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
   echo "Required source"
@@ -11,7 +22,7 @@ if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
 fi
 
 if [ ! -e $TARGET ]; then
-  echo "Not found. [$TARGET]"
+  echo "Not found target file or directory. [$TARGET]"
   exit 1
 fi
 
@@ -20,13 +31,23 @@ do
 key="$1"
 
 case $key in
-    -t|--type)
-    TYPE="$2"
+    -u|--upload-type)
+    UPLOAD_TYPE="$2"
     shift
     shift
     ;;
     -d|--destination)
     DESTINATION="$2"
+    shift
+    shift
+    ;;
+    -t|--tmpdir)
+    TMPDIR=${2%/}
+    shift
+    shift
+    ;;
+    -n|--name)
+    NAME=$2
     shift
     shift
     ;;
@@ -42,15 +63,19 @@ if [[ "$DESTINATION" = "" ]]; then
   exit 1
 fi
 
-case $TYPE in
+if [ ! -e $TMPDIR ]; then
+  echo "Not found.tmp directory [$TMPDIR]"
+  exit 1
+fi
+
+archive $TARGET $TMPDIR $NAME
+
+case $UPLOAD_TYPE in
     GCS)
-    echo GCS
     ;;
     S3)
-    echo S3
     ;;
     Dropbox)
-    echo Dropbox
     ;;
     *)
     echo "Required destination is in [GCS, S3, Dropbox]"
