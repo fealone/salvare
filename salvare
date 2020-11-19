@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 POSITIONAL=()
 TARGET=${1%/}
@@ -72,6 +72,14 @@ archive $TARGET $TMPDIR $NAME
 
 case $UPLOAD_TYPE in
     GCS)
+    GSPATH=${DESTINATION##*gs://}
+    BUCKET=${GSPATH%%/*}
+    OBJECT=${GSPATH#*/}
+    curl -X POST --data-binary @$TMPDIR/salvare/$NAME.tar.gz \
+    -H "Authorization: Bearer `gcloud auth print-access-token`" \
+    -H "Content-Type: application/gzip" \
+    "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET/o?uploadType=media&name=$OBJECT"
+    rm -f $TMPDIR/salvare/$NAME.tar.gz
     ;;
     S3)
     ;;
