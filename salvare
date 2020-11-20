@@ -5,6 +5,7 @@ TARGET=${1%/}
 UPLOAD_TYPE=""
 DESTINATION=""
 TMPDIR="/tmp"
+ACCESS_TOKEN=""
 if [ "${TARGET##*/}" = "." ] || [ "${TARGET##*/}" = ".." ] ; then
     NAME="salvare"
 else
@@ -51,6 +52,11 @@ case $key in
     shift
     shift
     ;;
+    -a|--access-token)
+    ACCESS_TOKEN=$2
+    shift
+    shift
+    ;;
     *)
     POSITIONAL+=("$1")
     shift
@@ -84,6 +90,11 @@ case $UPLOAD_TYPE in
     S3)
     ;;
     Dropbox)
+    curl -X POST --data-binary @$TMPDIR/salvare/$NAME.tar.gz \
+        -H "Authorization: Bearer $ACCESS_TOKEN" \
+        -H "Dropbox-API-Arg: {\"path\": \"$DESTINATION\"}" \
+        -H "Content-Type: application/octet-stream" \
+        "https://content.dropboxapi.com/2/files/upload"
     ;;
     *)
     echo "Required destination is in [GCS, S3, Dropbox]"
