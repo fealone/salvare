@@ -6,32 +6,34 @@ UPLOAD_TYPE=""
 DESTINATION=""
 TMPDIR="/tmp"
 ACCESS_TOKEN=""
-if [ "${TARGET##*/}" = "." ] || [ "${TARGET##*/}" = ".." ] ; then
-    NAME="salvare"
-else
-    NAME=${TARGET##*/}
-fi
 
 function archive () {
     mkdir -p "$2/salvare"
     tar -zcvf "$2/salvare/$3.tar.gz" $1 > /dev/null 2>&1
 }
 
-if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
-  echo "Required source"
-  exit 1
-fi
-
-if [ ! -e $TARGET ]; then
-  echo "Not found target file or directory. [$TARGET]"
-  exit 1
-fi
-
 while [[ $# -gt 0 ]]
 do
 key="$1"
 
 case $key in
+    -h|--help)
+    cat << EOF
+Usage: salvare [TARGET] [OPTIONS]...
+
+Target:
+  Backup target
+
+Options:
+  -h, --help  Show this message and exit.
+  -u, --upload-type [ENUM]  Select upload type [GCS, S3, Dropbox].
+  -d, --destination [TEXT]  Destination path by upload type.
+  -t, --tmpdir [TEXT]  The path used for writing with temporary.
+  -n, --name [TEXT]  Used for the temporary file.
+  -a, --access-token [TEXT]  Access token by upload type.
+EOF
+    exit 0
+    ;;
     -u|--upload-type)
     UPLOAD_TYPE="$2"
     shift
@@ -63,6 +65,23 @@ case $key in
     ;;
 esac
 done
+set -- "${POSITIONAL[@]}"
+
+if [ "${TARGET##*/}" = "." ] || [ "${TARGET##*/}" = ".." ] ; then
+    NAME="salvare"
+else
+    NAME=${TARGET##*/}
+fi
+
+if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
+  echo "Required source"
+  exit 1
+fi
+
+if [ ! -e $TARGET ]; then
+  echo "Not found target file or directory. [$TARGET]"
+  exit 1
+fi
 
 if [[ "$DESTINATION" = "" ]]; then
   echo "Required destination"
@@ -97,7 +116,7 @@ case $UPLOAD_TYPE in
         "https://content.dropboxapi.com/2/files/upload"
     ;;
     *)
-    echo "Required destination is in [GCS, S3, Dropbox]"
+    echo "Required upload_type is in [GCS, S3, Dropbox]"
     exit 1
     ;;
 esac
