@@ -9,17 +9,7 @@ ACCESS_TOKEN=""
 ACCESS_KEY_ID=""
 SECRET_ACCESS_KEY=""
 
-function archive () {
-    mkdir -p "$2/salvare"
-    tar -zcvf "$2/salvare/$3.tar.gz" $1 > /dev/null 2>&1
-}
-
-while [[ $# -gt 0 ]]
-do
-key="$1"
-
-case $key in
-    -h|--help)
+function show_help () {
     cat << EOF
 Usage: salvare [TARGET] [OPTIONS]...
 
@@ -36,7 +26,21 @@ Options:
   -s, --secret-access-key [TEXT]  Secert access key by AWS.
   -k, --access-key-id [TEXT]  Access key id by AWS.
 EOF
-    exit 0
+}
+
+function archive () {
+    mkdir -p "$2/salvare"
+    tar -zcvf "$2/salvare/$3.tar.gz" $1 > /dev/null 2>&1
+}
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -h|--help)
+    show_help
+    exit
     ;;
     -u|--upload-type)
     UPLOAD_TYPE="$2"
@@ -88,22 +92,26 @@ else
 fi
 
 if [[ "$TARGET" = "" ]] || [[ "$TARGET" == -* ]]; then
-  echo "Required source"
+  echo "Required target directory"
+  show_help
   exit 1
 fi
 
 if [ ! -e $TARGET ]; then
   echo "Not found target file or directory. [$TARGET]"
+  show_help
   exit 1
 fi
 
 if [[ "$DESTINATION" = "" ]]; then
   echo "Required destination"
+  show_help
   exit 1
 fi
 
 if [ ! -e $TMPDIR ]; then
   echo "Not found.tmp directory [$TMPDIR]"
+  show_help
   exit 1
 fi
 
