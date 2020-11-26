@@ -6,6 +6,8 @@ UPLOAD_TYPE=""
 DESTINATION=""
 TMPDIR="/tmp"
 ACCESS_TOKEN=""
+ACCESS_KEY_ID=""
+SECRET_ACCESS_KEY=""
 
 function archive () {
     mkdir -p "$2/salvare"
@@ -30,7 +32,9 @@ Options:
   -d, --destination [TEXT]  Destination path by upload type.
   -t, --tmpdir [TEXT]  The path used for writing with temporary.
   -n, --name [TEXT]  Used for the temporary file.
-  -a, --access-token [TEXT]  Access token by upload type.
+  -a, --access-token [TEXT]  Access token by Dropbox.
+  -s, --secret-access-key [TEXT]  Secert access key by AWS.
+  -k, --access-key-id [TEXT]  Access key id by AWS.
 EOF
     exit 0
     ;;
@@ -56,6 +60,16 @@ EOF
     ;;
     -a|--access-token)
     ACCESS_TOKEN=$2
+    shift
+    shift
+    ;;
+    -k|--access-key-id)
+    ACCESS_KEY_ID=$2
+    shift
+    shift
+    ;;
+    -s|--secret-access-key)
+    SECRET_ACCESS_KEY=$2
     shift
     shift
     ;;
@@ -101,19 +115,34 @@ case $UPLOAD_TYPE in
     BUCKET=${GSPATH%%/*}
     OBJECT=${GSPATH#*/}
     curl -X POST --data-binary @$TMPDIR/salvare/$NAME.tar.gz \
-    -H "Authorization: Bearer `gcloud auth print-access-token`" \
-    -H "Content-Type: application/gzip" \
-    "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET/o?uploadType=media&name=$OBJECT"
+      -H "Authorization: Bearer `gcloud auth print-access-token`" \
+      -H "Content-Type: application/gzip" \
+      "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET/o?uploadType=media&name=$OBJECT"
     rm -f $TMPDIR/salvare/$NAME.tar.gz
     ;;
     S3)
+    S3PATH=${DESTINATION##*s3://}
+    BUCKET=${S3PATH%%/*}
+    OBJECT=${S3PATH#*/}
+    MD5=`cat $TMPDIR/salvare/$NAME.tar.gz | openssl md5 --binary | base64`
+    CONTENT_TYPE="application/x-compressed-tar"
+    DATE=`date -R`
+    SIGN="PUT\n${MD5}\n${CONTENT_TYPE}\n${DATE}\n/${BUCKET}/${OBJECT}"
+    SIG=`echo -en ${SIGN} | openssl sha1 -hmac ${SECRET_ACCESS_KEY} -binary | base64`
+    curl -X PUT -T "$TMPDIR/salvare/$NAME.tar.gz" \
+      -H "Host: ${BUCKET}.s3.amazonaws.com" \
+      -H "Date: ${DATE}" \
+      -H "Content-Type: ${CONTENT_TYPE}" \
+      -H "Content-MD5: ${MD5}" \
+      -H "Authorization: AWS ${ACCESS_KEY_ID}:${SIG}" \
+      https://${BUCKET}.s3.amazonaws.com/${OBJECT}
     ;;
     Dropbox)
     curl -X POST --data-binary @$TMPDIR/salvare/$NAME.tar.gz \
-        -H "Authorization: Bearer $ACCESS_TOKEN" \
-        -H "Dropbox-API-Arg: {\"path\": \"$DESTINATION\"}" \
-        -H "Content-Type: application/octet-stream" \
-        "https://content.dropboxapi.com/2/files/upload"
+      -H "Authorization: Bearer $ACCESS_TOKEN" \
+      -H "Dropbox-API-Arg: {\"path\": \"$DESTINATION\"}" \
+      -H "Content-Type: application/octet-stream" \
+      "https://content.dropboxapi.com/2/files/upload"
     ;;
     *)
     echo "Required upload_type is in [GCS, S3, Dropbox]"

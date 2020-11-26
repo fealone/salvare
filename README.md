@@ -34,6 +34,18 @@ export GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 ./salvare {BACKUP_DIRECTORY} -u GCS -d gs://{BUCKET}/{OBJECT}
 ```
 
+### S3
+
+#### Required
+* openssl
+* base64
+
+#### Commands
+
+```bash
+./salvare {BACKUP_DIRECTORY} --upload-type S3 --destination s3://{BUCKET}/{OBJECT} --access-key-id {ACCESS_KEY_ID} --secret-access-key {SECRET_ACCESS_KEY}
+```
+
 ### Dropbox
 
 #### Required
