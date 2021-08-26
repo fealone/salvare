@@ -30,7 +30,7 @@ Options:
 #### Commands
 
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+export CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE=credentials.json
 ./salvare {BACKUP_DIRECTORY} -u GCS -d gs://{BUCKET}/{OBJECT}
 ```
 
