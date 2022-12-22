@@ -18,7 +18,7 @@ Target:
 
 Options:
   -h, --help  Show this message and exit.
-  -u, --upload-type [ENUM]  Select upload type [GCS, S3, Dropbox].
+  -u, --upload-type [ENUM]  Select upload type [LOCAL, GCS, S3, Dropbox].
   -d, --destination [TEXT]  Destination path by upload type.
   -t, --tmpdir [TEXT]  The path used for writing with temporary.
   -n, --name [TEXT]  Used for the temporary file.
@@ -118,6 +118,9 @@ fi
 archive $TARGET $TMPDIR $NAME
 
 case $UPLOAD_TYPE in
+    LOCAL)
+    mv $TMPDIR/salvare/$NAME.tar.gz $DESTINATION
+    ;;
     GCS)
     GSPATH=${DESTINATION##*gs://}
     BUCKET=${GSPATH%%/*}
@@ -126,7 +129,6 @@ case $UPLOAD_TYPE in
       -H "Authorization: Bearer `gcloud auth print-access-token`" \
       -H "Content-Type: application/gzip" \
       "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET/o?uploadType=media&name=$OBJECT"
-    rm -f $TMPDIR/salvare/$NAME.tar.gz
     ;;
     S3)
     S3PATH=${DESTINATION##*s3://}
@@ -157,3 +159,5 @@ case $UPLOAD_TYPE in
     exit 1
     ;;
 esac
+
+rm -f $TMPDIR/salvare/$NAME.tar.gz
